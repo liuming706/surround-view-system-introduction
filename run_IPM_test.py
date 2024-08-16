@@ -26,41 +26,17 @@ def callback(image_msg):
         # image = cv2.imread(image_file)
         camera = FisheyeCameraModel(camera_file, camera_name)
         camera.set_scale_and_shift(scale, shift)
-        success = get_projection_map(camera, cv_image)
-        if success:
-            print("saving projection matrix to yaml")
-            camera.save_data()
-        else:
-            print("failed to compute the projection map")
+        # und_image = camera.undistort(cv_image)
+        proj_image = camera.project(cv_image)
     except CvBridgeError as e:
         rospy.logerr("CvBridge Error: {0}".format(e))
         return
 
     # 显示图像
-    cv2.imshow("Camera Image", cv_image)
+    cv2.imshow("Origim Image", cv_image)
+    # cv2.imshow("Undistort Image", und_image)
+    cv2.imshow("Bird's View Image", proj_image)
     cv2.waitKey(30)  # 等待1毫秒，以便更新窗口
-
-
-def get_projection_map(camera_model, image):
-
-    name = camera_model.camera_name
-    gui = PointSelector(image, title=name)
-    dst_points = settings.project_keypoints[name]
-    choice = gui.loop()
-    if choice > 0:
-        src = np.float32(gui.keypoints)
-        dst = np.float32(dst_points)
-        camera_model.project_matrix = cv2.getPerspectiveTransform(src, dst)
-        # und_image = camera_model.undistort(image)
-        proj_image = camera_model.project(image)
-
-        ret = display_image("Bird's View", proj_image)
-        if ret > 0:
-            return True
-        if ret < 0:
-            cv2.destroyAllWindows()
-
-    return False
 
 
 def main():
